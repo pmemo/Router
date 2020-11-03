@@ -58,7 +58,7 @@ Route::post('/earn/<money>', 'MoneyClass@earn');
 
 ### Groups
 
-You separate logic using routes grouping method
+You can separate logic using routes grouping method
 
 ```php
 Route::group('/base', function(){
@@ -89,7 +89,7 @@ Route::get('/', 'SomeClass@someMethod')->middleware(false); // 403
 Route::post('/', 'SomeClass@someMethod')->middleware(function(){ return true; });
 Route::get('/', 'SomeClass@someMethod')->middleware('SomeClass1@someMethod')->middleware('SomeClass2@someMethod');
 
-Route::middleware('/url', function() { ... })->middleware(true);
+Route::group('/url', function() { ... })->middleware(true);
 ```
 
 Handle custom status if access denied
