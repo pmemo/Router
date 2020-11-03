@@ -1,0 +1,25 @@
+{
+    "name": "pmemo/route",
+    "description": "Simple PHP router.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Patryk Piórkowski",
+            "role": "Developer"
+        }
+    ],
+    "type": "library",
+    "require": {
+        "php": "^7.2"
+    },
+    "autoload": {
+        "files": [
+            "Route.php"
+        ]
+    },
+    "keywords": [
+        "router",
+        "routing",
+        "route"
+    ]
+}
