@@ -7,15 +7,23 @@ A simple one-file PHP routing library.
 Create .htaccess file and redirect all to index.php
 
 ```htaccess
+Options -Indexes
+
 Header always set Access-Control-Allow-Origin "*"
-Header always set Access-Control-Allow-Methods "POST, GET"
-Header always set Access-Control-Allow-Headers "Content-Type"
+Header always set Access-Control-Allow-Methods "POST, GET, PATCH, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Auth"
 
 RewriteEngine On
 RewriteCond %{REQUEST_METHOD} !OPTIONS
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^ index.php [L]
+
+# protect db file if you need
+RewriteCond %{REQUEST_URI} (.*).sqlite3 [NC]
+RewriteRule ^(.*)$ [R=404,L]
+
+DirectoryIndex index.php
 ```
 
 Define routes in index.php and run the router
@@ -23,7 +31,7 @@ Define routes in index.php and run the router
 ```php
 require 'Route.php';
 
-Route::get('/<name>', function($data) {
+Route::get('/:name', function($data) {
   echo 'Hello '.$data['name'];
 });
 
@@ -34,7 +42,7 @@ Route::run();
 
 ### Defining routes
 
-Methods: **get**, **post**
+Methods: **get**, **post**, **put**, **patch**, **delete**
 
 ```php
 Route::get('/url', function() { ... });
@@ -49,7 +57,7 @@ Route::post('/url', 'Path/To/Class/File@staticMethodName');
 ```
 
 ```php
-Route::get('/hello/<name>/<money>', function($data) {
+Route::get('/hello/:name/:money', function($data) {
   echo 'Hello '.$data['name'].' - you have '. $data['money'].'$!';
 });
 
@@ -62,7 +70,7 @@ You can separate logic using routes grouping method
 
 ```php
 Route::group('/base', function(){
-  Route::get('/<url>', function($data) {
+  Route::get('/:url', function($data) {
     echo 'URL: /base/'.$data['url'];
   });
 
