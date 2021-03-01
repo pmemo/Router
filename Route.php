@@ -1,7 +1,8 @@
 <?php
 
-class Route
+class Router
 {
+    private static $methods = ['get', 'post', 'put', 'patch', 'delete'];
     private static $routes = [];
     private static $middlewares = [];
     private static $status = [];
@@ -9,6 +10,14 @@ class Route
         'current' => '',
         'last' => ''
     ];
+
+    public static function __callStatic($method, $args) {
+        if(in_array($method, self::$methods) && count($args) == 2) {
+            self::addRoute($method, $args[0], $args[1]);
+        }
+
+        return new static();
+    }
 
     private static function namespace($case, $level)
     {
@@ -102,18 +111,6 @@ class Route
         return false;
     }
 
-    public static function get($url, $callback)
-    {
-        self::addRoute('GET', $url, $callback);
-        return new static();
-    }
-
-    public static function post($url, $callback)
-    {
-        self::addRoute('POST', $url, $callback);
-        return new static();
-    }
-
     public static function middleware($callback, $code = null)
     {
         array_push(self::$middlewares, [
@@ -136,15 +133,15 @@ class Route
     public static function run()
     {
         $routes = array_filter(self::$routes, function ($route) {
-            return $route['method'] == $_SERVER['REQUEST_METHOD'];
+            return strtoupper($route['method']) == $_SERVER['REQUEST_METHOD'];
         });
 
         $URI = explode('?', $_SERVER['REQUEST_URI'])[0];
         foreach ($routes as $route) {
-            $regex = '/<([a-zA-Z0-9_]+)>/';
+            $regex = '/\:([a-zA-Z0-9_]+)/';
             preg_match_all($regex, $route['url'], $indexes);
             unset($indexes[0]); $indexes = $indexes[1];
-            $url = preg_replace($regex, substr($regex, 2, -2), $route['url']);
+            $url = preg_replace($regex, substr($regex, 3, -1), $route['url']);
             if (preg_match('#^'.$url.'$#', $URI, $matched)) {
                 unset($matched[0]);
                 self::loadRoute($route, array_combine($indexes, $matched));
