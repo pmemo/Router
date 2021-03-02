@@ -223,7 +223,7 @@ class Request {
         if($key !== null) {
             return isset($this->$dataSet[$key]) ? $this->$dataSet[$key] : null;
         } else {
-            return isset($this->$dataSet);
+            return isset($this->$dataSet) ? $this->$dataSet: null;
         }
     }
 
