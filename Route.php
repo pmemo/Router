@@ -195,8 +195,12 @@ class Request {
         $this->files = $args['files'];
     }
 
-    private function _getData($dataSet, $key) {
-        return isset($this->$dataSet[$key]) ? $this->$dataSet[$key] : null;
+    private function _getData($dataSet, $key = null) {
+        if($key !== null) {
+            return isset($this->$dataSet[$key]) ? $this->$dataSet[$key] : null;
+        } else {
+            return isset($this->$dataSet);
+        }
     }
 
     // Data methods
@@ -214,6 +218,19 @@ class Request {
 
     public function file($key) {
         return $this->_getData('files', $key);
+    }
+
+    public function data($name) {
+        return $this->_getData($name);
+    }
+
+    public function all() {
+        return array_merge(
+            $this->_getData('query', $key),
+            $this->_getData('files', $key),
+            $this->_getData('params', $key),
+            $this->_getData('body', $key)
+        );
     }
 
     public function header($key) { 
