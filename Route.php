@@ -228,27 +228,23 @@ class Request {
     }
 
     // Data methods
-    public function param($key) {
+    public function param($key = null) {
         return $this->_getData('params', $key);
     }
 
-    public function query($key) {
+    public function query($key = null) {
         return $this->_getData('query', $key);
     }
 
-    public function body($key) {
+    public function body($key = null) {
         return $this->_getData('body', $key);
     }
 
-    public function file($key) {
+    public function file($key = null) {
         return $this->_getData('files', $key);
     }
 
-    public function getData($name) {
-        return $this->_getData($name);
-    }
-
-    public function getAllData() {
+    public function all() {
         return array_merge(
             $this->_getData('query', $key),
             $this->_getData('files', $key),
