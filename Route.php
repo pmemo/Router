@@ -160,6 +160,10 @@ class Router
             return strtoupper($route['method']) == $_SERVER['REQUEST_METHOD'];
         });
 
+        usort($routes, function ($r1, $r2) {
+            return (strstr($r1['url'], ':')) ? 1 : -1;
+        });
+
         $URI = explode('?', $_SERVER['REQUEST_URI'])[0];
         foreach ($routes as $route) {
             $regex = '/\:([a-zA-Z0-9_]+)/';
@@ -255,10 +259,11 @@ class Request {
 
     public function set($name, $value) {
         $this->props[$name] = $value;
+        return $this;
     }
 
     public function get($name) {
-        return $this->props[$name];
+        return isset($this->props[$name]) ? $this->props[$name] : null;
     }
 
     public function header($key) { 
