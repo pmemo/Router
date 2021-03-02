@@ -119,7 +119,7 @@ Router::get('/', 'SomeClass@someMethod')->middleware(false); // 403
 Router::post('/', 'SomeClass@someMethod')->middleware(function(){ return true; });
 Router::get('/', 'SomeClass@someMethod')->middleware('SomeClass1@someMethod')->middleware('SomeClass2@someMethod');
 
-Router::group('/url', function() { ... })->middleware(true);
+Router::group('/url', function() { ... })->middleware([true, true, false]);
 ```
 
 Handle custom status if access denied
