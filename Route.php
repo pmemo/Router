@@ -44,7 +44,7 @@ class Router
         self::namespace('last', $url);
     }
 
-    private static function loadClass($classStr, $args = [])
+    private static function loadClass($classStr, $args)
     {
         $class = null;
         if (strpos($classStr, '@')) {
@@ -63,7 +63,7 @@ class Router
 
         if (method_exists($classInstance, $method) || method_exists($classInstance, '__call')) {
             $classInstance = new $className;
-            call_user_func_array([$classInstance, $method], $args);
+            return call_user_func_array([$classInstance, $method], $args);
         }
     }
 
@@ -86,22 +86,31 @@ class Router
         return true;
     }
 
-    private static function loadRoute($route, $args = [])
+    private static function loadRoute($route, $params = [])
     {
         if (self::getAccess($route['url'])) {
-            $args = array_merge($args, $_GET, $_POST, $_FILES);
-            self::call($route['callback'], [$args]);
+            self::call($route['callback'], $params);
         } else {
             self::handleStatus(403);
         }
     }
 
-    private static function call($callback, $args = [])
+    private static function call($callback, $params = [])
     {
+        $args = [
+            'params' => $params,
+            'query' => $_GET,
+            'body' => $_POST,
+            'files' => $_FILES
+        ];
+
+        $req = new Request($args);
+        $res = new Response();
+
         if (is_callable($callback)) {
-            return call_user_func_array($callback, $args);
+            return call_user_func_array($callback, [$req, $res]);
         } elseif (is_string($callback)) {
-            return self::loadClass($callback, $args);
+            return self::loadClass($callback, [$req, $res]);
         } elseif (is_bool($callback)) {
             return $callback;
         } else {
@@ -170,5 +179,55 @@ class Router
     {
         header("Location: $url");
         exit();
+    }
+}
+
+class Request {
+    private $params = [];
+    private $query = [];
+    private $body = [];
+    private $files = [];
+
+    public function __construct($args) {
+        $this->params = $args['params'];
+        $this->query = $args['query'];
+        $this->body = $args['body'];
+        $this->files = $args['files'];
+    }
+
+    private function _getData($dataSet, $key) {
+        return isset($this->$dataSet[$key]) ? $this->$dataSet[$key] : null;
+    }
+
+    // Data methods
+    public function param($key) {
+        return $this->_getData('params', $key);
+    }
+
+    public function query($key) {
+        return $this->_getData('query', $key);
+    }
+
+    public function body($key) {
+        return $this->_getData('body', $key);
+    }
+
+    public function file($key) {
+        return $this->_getData('files', $key);
+    }
+
+    public function header($key) { 
+        $headers = apache_request_headers();
+        return isset($headers[$key]) ? $headers[$key] : null;
+    }
+}
+
+class Response {
+    public function send($code, $message = null) {
+        if($message) {
+            echo json_encode($message);
+        }
+
+        http_response_code($code);
     }
 }
