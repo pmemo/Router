@@ -124,11 +124,22 @@ class Router
 
     public static function middleware($callback, $code = null)
     {
-        array_push(self::$middlewares, [
-            'url' => self::$namespace['current'].self::$namespace['last'],
-            'callback' => $callback,
-            'code' => $code
-        ]);
+        if(is_array($callback)) {
+            foreach($callback as $middleware) {
+                array_push(self::$middlewares, [
+                    'url' => self::$namespace['current'].self::$namespace['last'],
+                    'callback' => $middleware,
+                    'code' => $code
+                ]);
+            }
+        } else {
+            array_push(self::$middlewares, [
+                'url' => self::$namespace['current'].self::$namespace['last'],
+                'callback' => $callback,
+                'code' => $code
+            ]);
+        }
+
         return new static();
     }
 
