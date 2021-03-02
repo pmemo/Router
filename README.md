@@ -31,11 +31,11 @@ Define routes in index.php and run the router
 ```php
 require 'Route.php';
 
-Route::get('/:name', function($req, $res) {
+Router::get('/:name', function($req, $res) {
   echo 'Hello '.$req->param('name');
 });
 
-Route::run();
+Router::run();
 ```
 
 ## Documentation
@@ -46,8 +46,8 @@ Methods: **get**, **post**, **put**, **patch**, **delete**
 Arguments: **$req**, **res** - *optional*
 
 ```php
-Route::get('/url', function() { ... });
-Route::post('/url', function($req, $res) { ... });
+Router::get('/url', function() { ... });
+Router::post('/url', function($req, $res) { ... });
 ```
 
 Req methods:
@@ -63,7 +63,7 @@ code is http status code, message_array is json encoded array
 
 example
 ```php
-Route::get('/api/hello/:name', function($req, $res) {
+Router::get('/api/hello/:name', function($req, $res) {
   $res->send(200, ['message' => 'Hello '.$req->param('name')]);
 });
 ```
@@ -71,16 +71,16 @@ Route::get('/api/hello/:name', function($req, $res) {
 Using classes
 
 ```php
-Route::get('/url', 'Path/To/Class/File@dynamicMethodName');
-Route::post('/url', 'Path/To/Class/File@staticMethodName');
+Router::get('/url', 'Path/To/Class/File@dynamicMethodName');
+Router::post('/url', 'Path/To/Class/File@staticMethodName');
 ```
 
 ```php
-Route::get('/hello/:name/:money', function($req, $res) {
+Router::get('/hello/:name/:money', function($req, $res) {
   echo 'Hello '.$req->param('name').' - you have '. $req->param('money').'$!';
 });
 
-Route::post('/earn/<money>', 'MoneyClass@earn');
+Router::post('/earn/<money>', 'MoneyClass@earn');
 ```
 
 ### Groups
@@ -88,12 +88,12 @@ Route::post('/earn/<money>', 'MoneyClass@earn');
 You can separate logic using routes grouping method
 
 ```php
-Route::group('/base', function(){
-  Route::get('/:url', function($req, $res) {
+Router::group('/base', function(){
+  Router::get('/:url', function($req, $res) {
     echo 'URL: /base/'.$data['url'];
   });
 
-  Route::post('', 'SomeClass@someMethod');
+  Router::post('', 'SomeClass@someMethod');
 });
 ```
 
@@ -102,7 +102,7 @@ Route::group('/base', function(){
 Handle http request status
 
 ```php
-Route::status(404, function(){
+Router::status(404, function(){
   echo 'Page not found!';
 });
 ```
