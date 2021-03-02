@@ -56,6 +56,8 @@ Req methods:
 - body(name) - $_POST etc. body
 - query(name) - $_GET
 - file(name) - $_FILES
+- set(name, value) - provide value through middleware
+- get(name) - get provided value
 
 Res methods:
 - send(code, message_array)
@@ -110,6 +112,7 @@ Router::status(404, function(){
 ### Middlewares
 
 Protect access to routes by adding middlewares to route or group. If false then returns http status code 403.
+Or to make changes in requests and providing values to next middlewares or routes.
 
 ```php
 Router::get('/', 'SomeClass@someMethod')->middleware(false); // 403
