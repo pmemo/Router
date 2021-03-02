@@ -3,6 +3,7 @@
 class Router
 {
     private static $methods = ['get', 'post', 'put', 'patch', 'delete'];
+    private static $request;
     private static $routes = [];
     private static $middlewares = [];
     private static $status = [];
@@ -73,38 +74,39 @@ class Router
             return strpos($url, $middleware['url']) !== false;
         });
 
+        $access = true;
         foreach ($middlewares as $middleware) {
-            if (self::call($middleware['callback']) === false) {
-                if ($middleware['code']) {
-                    self::handleStatus($middleware['code']);
-                    exit();
-                }
-                return false;
+            $return = self::call($middleware['callback']);
+
+            if(is_object($return)){
+                self::$request = $return;
+            } elseif (is_bool($return)) {
+                if($return === false) $access = false;
+            } elseif(is_array($return)) {
+                if($return[1] === false) $access = false;
+            }
+
+            if(!$access && $middleware['code']) {
+                self::handleStatus($middleware['code']);
+                exit();
             }
         }
 
-        return true;
+        return $access;
     }
 
-    private static function loadRoute($route, $params = [])
+    private static function loadRoute($route)
     {
         if (self::getAccess($route['url'])) {
-            self::call($route['callback'], $params);
+            self::call($route['callback']);
         } else {
             self::handleStatus(403);
         }
     }
 
-    private static function call($callback, $params = [])
+    private static function call($callback)
     {
-        $args = [
-            'params' => $params,
-            'query' => $_GET,
-            'body' => $_POST,
-            'files' => $_FILES
-        ];
-
-        $req = new Request($args);
+        $req = self::$request;
         $res = new Response();
 
         if (is_callable($callback)) {
@@ -141,6 +143,8 @@ class Router
 
     public static function run()
     {
+        self::$request = new Request();
+
         $routes = array_filter(self::$routes, function ($route) {
             return strtoupper($route['method']) == $_SERVER['REQUEST_METHOD'];
         });
@@ -153,7 +157,8 @@ class Router
             $url = preg_replace($regex, substr($regex, 3, -1), $route['url']);
             if (preg_match('#^'.$url.'$#', $URI, $matched)) {
                 unset($matched[0]);
-                self::loadRoute($route, array_combine($indexes, $matched));
+                self::$request->setParams(array_combine($indexes, $matched));
+                self::loadRoute($route);
                 return;
             }
         }
@@ -183,16 +188,20 @@ class Router
 }
 
 class Request {
+    private $props = [];
     private $params = [];
     private $query = [];
     private $body = [];
     private $files = [];
 
-    public function __construct($args) {
-        $this->params = $args['params'];
-        $this->query = $args['query'];
-        $this->body = $args['body'];
-        $this->files = $args['files'];
+    public function __construct() {
+        $this->query = $_GET;
+        $this->body = $_POST;
+        $this->files = $_FILES;
+    }
+
+    public function setParams($params) {
+        $this->params = $params;
     }
 
     private function _getData($dataSet, $key = null) {
@@ -220,17 +229,25 @@ class Request {
         return $this->_getData('files', $key);
     }
 
-    public function data($name) {
+    public function getData($name) {
         return $this->_getData($name);
     }
 
-    public function all() {
+    public function getAllData() {
         return array_merge(
             $this->_getData('query', $key),
             $this->_getData('files', $key),
             $this->_getData('params', $key),
             $this->_getData('body', $key)
         );
+    }
+
+    public function set($name, $value) {
+        $this->props[$name] = $value;
+    }
+
+    public function get($name) {
+        return $this->props[$name];
     }
 
     public function header($key) { 
