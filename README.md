@@ -55,6 +55,7 @@ Req methods:
 - param(name) - in URL :param
 - body(name) - $_POST etc. body
 - query(name) - $_GET
+- json(name) - raw json encoded data
 - file(name) - $_FILES
 - set(name, value) - provide value through middleware
 - get(name) - get provided value
