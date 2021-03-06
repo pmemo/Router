@@ -208,11 +208,13 @@ class Request {
     private $query = [];
     private $body = [];
     private $files = [];
+    private $json = [];
 
     public function __construct() {
         $this->query = $_GET;
         $this->body = $_POST;
         $this->files = $_FILES;
+        $this->json = json_decode(file_get_contents("php://input"), true);
     }
 
     public function setParams($params) {
@@ -238,6 +240,10 @@ class Request {
 
     public function body($key = null) {
         return $this->_getData('body', $key);
+    }
+
+    public function json($key = null) {
+        return $this->_getData('json', $key);
     }
 
     public function file($key = null) {
