@@ -29,7 +29,7 @@ DirectoryIndex index.php
 Define routes in index.php and run the router
 
 ```php
-require 'Route.php';
+require 'Router.php';
 
 Router::get('/:name', function($req, $res) {
   echo 'Hello '.$req->param('name');
