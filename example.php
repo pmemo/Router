@@ -1,9 +1,9 @@
 <?php
 
-require_once 'Route.php';
+require_once 'Router.php';
 
-Route::get('/<name>', function($data){
-    echo 'Hello ' . $data['name'];
+Router::get('/:name', function($req){
+    echo 'Hello ' . $req->param('name');
 });
 
-Route::run();
+Router::run();
