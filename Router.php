@@ -203,6 +203,7 @@ class Router
 }
 
 class Request {
+    private $headers = [];
     private $props = [];
     private $params = [];
     private $query = [];
@@ -211,6 +212,7 @@ class Request {
     private $json = [];
 
     public function __construct() {
+        $this->headers = apache_request_headers();
         $this->query = $_GET;
         $this->body = $_POST;
         $this->files = $_FILES;
@@ -269,8 +271,7 @@ class Request {
     }
 
     public function header($key) { 
-        $headers = apache_request_headers();
-        return isset($headers[$key]) ? $headers[$key] : null;
+        return isset($this->headers[$key]) ? $this->headers[$key] : null;
     }
 }
 
