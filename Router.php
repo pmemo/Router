@@ -232,7 +232,7 @@ class Request {
     }
 
     // Data methods
-    public function param($key = null) {
+    public function params($key = null) {
         return $this->_getData('params', $key);
     }
 
@@ -248,16 +248,16 @@ class Request {
         return $this->_getData('json', $key);
     }
 
-    public function file($key = null) {
+    public function files($key = null) {
         return $this->_getData('files', $key);
     }
 
     public function all() {
         return array_merge(
-            $this->_getData('query', $key),
-            $this->_getData('files', $key),
-            $this->_getData('params', $key),
-            $this->_getData('body', $key)
+            $this->_getData('query'),
+            $this->_getData('files'),
+            $this->_getData('params'),
+            $this->_getData('body')
         );
     }
 
