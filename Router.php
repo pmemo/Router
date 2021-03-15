@@ -251,6 +251,10 @@ class Request {
     public function files($key = null) {
         return $this->_getData('files', $key);
     }
+    
+    public function headers($key = null) { 
+        return $this->_getData('headers', $key);
+    }
 
     public function all() {
         return array_merge(
@@ -268,10 +272,6 @@ class Request {
 
     public function get($name) {
         return isset($this->props[$name]) ? $this->props[$name] : null;
-    }
-
-    public function header($key) { 
-        return isset($this->headers[$key]) ? $this->headers[$key] : null;
     }
 }
 
