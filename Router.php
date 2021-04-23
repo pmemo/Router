@@ -63,7 +63,7 @@ class Router
         $classInstance = $className;
 
         if (method_exists($classInstance, $method) || method_exists($classInstance, '__call')) {
-            $classInstance = new $className;
+            $classInstance = new $className(self::$request);
             return call_user_func_array([$classInstance, $method], $args);
         }
     }
@@ -71,7 +71,7 @@ class Router
     private static function getAccess($url)
     {
         $middlewares = array_filter(self::$middlewares, function ($middleware) use ($url) {
-            return strpos($url, $middleware['url']) !== false;
+            return strpos($url, $middleware['url']) !== false && strlen($url) === strlen($middleware['url']);
         });
 
         $access = true;
@@ -251,10 +251,6 @@ class Request {
     public function files($key = null) {
         return $this->_getData('files', $key);
     }
-    
-    public function headers($key = null) { 
-        return $this->_getData('headers', $key);
-    }
 
     public function all() {
         return array_merge(
@@ -272,6 +268,10 @@ class Request {
 
     public function get($name) {
         return isset($this->props[$name]) ? $this->props[$name] : null;
+    }
+
+    public function header($key) { 
+        return isset($this->headers[$key]) ? $this->headers[$key] : null;
     }
 }
 
