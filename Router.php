@@ -71,7 +71,11 @@ class Router
     private static function getAccess($url)
     {
         $middlewares = array_filter(self::$middlewares, function ($middleware) use ($url) {
-            return strpos($url, $middleware['url']) !== false && strlen($url) === strlen($middleware['url']);
+            return strpos($url, $middleware['url']) !== false && (
+                (isset($url[strlen($middleware['url'])]) &&
+                $url[strlen($middleware['url'])] === '/') ||
+                strlen($url) === strlen($middleware['url'])
+            );
         });
 
         $access = true;
