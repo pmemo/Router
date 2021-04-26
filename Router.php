@@ -218,7 +218,13 @@ class Request {
     public function __construct() {
         $this->headers = apache_request_headers();
         $this->query = $_GET;
-        $this->body = $_POST;
+        
+        if($_SERVER['REQUEST_METHOD'] == 'PUT') {
+            parse_str(file_get_contents("php://input"), $this->body);
+        } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $this->body = $_POST;
+        }
+
         $this->files = $_FILES;
         $this->json = json_decode(file_get_contents("php://input"), true);
     }
