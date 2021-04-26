@@ -219,10 +219,18 @@ class Request {
         $this->headers = apache_request_headers();
         $this->query = $_GET;
         
-        if($_SERVER['REQUEST_METHOD'] == 'PUT') {
-            parse_str(file_get_contents("php://input"), $this->body);
-        } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $this->body = $_POST;
+        switch($_SERVER['REQUEST_METHOD']){
+            case 'POST':
+                $this->body = $_POST;
+                break;
+            case 'PUT':
+                parse_str(file_get_contents("php://input"), $this->body);
+                break;
+            case 'PATCH':
+                parse_str(file_get_contents("php://input"), $this->body);
+                break;
+            default:
+                break;
         }
 
         $this->files = $_FILES;
@@ -287,6 +295,8 @@ class Request {
 
 class Response {
     public function send($code, $message = null) {
+        header('Content-Type: application/json');
+        
         if($message) {
             echo json_encode($message);
         }
