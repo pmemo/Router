@@ -213,28 +213,12 @@ class Request {
     private $query = [];
     private $body = [];
     private $files = [];
-    private $json = [];
 
     public function __construct() {
         $this->headers = apache_request_headers();
         $this->query = $_GET;
-        
-        switch($_SERVER['REQUEST_METHOD']){
-            case 'POST':
-                $this->body = $_POST;
-                break;
-            case 'PUT':
-                parse_str(file_get_contents("php://input"), $this->body);
-                break;
-            case 'PATCH':
-                parse_str(file_get_contents("php://input"), $this->body);
-                break;
-            default:
-                break;
-        }
-
+        $this->body = $_POST ? $_POST : json_decode(file_get_contents("php://input"), true);
         $this->files = $_FILES;
-        $this->json = json_decode(file_get_contents("php://input"), true);
     }
 
     public function setParams($params) {
@@ -260,10 +244,6 @@ class Request {
 
     public function body($key = null) {
         return $this->_getData('body', $key);
-    }
-
-    public function json($key = null) {
-        return $this->_getData('json', $key);
     }
 
     public function files($key = null) {
