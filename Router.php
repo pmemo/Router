@@ -1,48 +1,68 @@
 <?php
-
-class Router
-{
-    private static $methods = ['get', 'post', 'put', 'patch', 'delete'];
-    private static $request;
+class Router {
+    const METHODS = ['get', 'post', 'put', 'patch', 'delete'];
     private static $routes = [];
-    private static $middlewares = [];
-    private static $status = [];
-    private static $namespace = [
-        'current' => '',
-        'last' => ''
-    ];
+    private static $urlPrefix;
+    private static $request;
 
     public static function __callStatic($method, $args) {
-        if(in_array($method, self::$methods) && count($args) == 2) {
-            self::addRoute($method, $args[0], $args[1]);
+        if(in_array($method, self::METHODS)) {
+            $url = array_shift($args);
+            self::addRoute($method, $url, $args);
         }
 
         return new static();
     }
 
-    private static function namespace($case, $level)
-    {
-        switch ($case) {
-            case 'next':
-                self::$namespace['current'] .= $level;
-            break;
-            case 'prev':
-                self::$namespace['current'] = str_replace($level, '', self::$namespace['current']);
-                break;
-            case 'last':
-                self::$namespace['last'] = $level;
-            break;
-        }
-    }
-
-    private static function addRoute($method, $url, $callback)
+    private static function addRoute($method, $url, $callbacks)
     {
         array_push(self::$routes, [
             'method' => $method,
-            'url' => self::$namespace['current'].$url,
-            'callback' => $callback
+            'url' => self::$urlPrefix.$url,
+            'callbacks' => $callbacks
         ]);
-        self::namespace('last', $url);
+    }
+
+    public static function use(...$callbacks) {
+        if(!self::isUrlMatch($callbacks[0])) return;
+
+        if(is_string($callbacks[0])) {
+            self::$urlPrefix .= $callbacks[0];
+            $quote = array_shift($callbacks);
+            self::call($callbacks);
+            self::$urlPrefix = preg_replace('/'.preg_quote($quote, '/').'$/', '', self::$urlPrefix);
+        } else {
+            self::call($callbacks);
+        }
+    }
+
+    private static function isUrlMatch($url) {
+        $URI = explode('?', $_SERVER['REQUEST_URI'])[0];
+        $regex = '/\:([a-zA-Z0-9_]+)/';
+        preg_match_all($regex, $url, $indexes);
+        unset($indexes[0]); $indexes = $indexes[1];
+        $url = preg_replace($regex, substr($regex, 3, -1), $url);
+        return preg_match("#{$url}#i", $URI);
+    }
+
+    private static function call($callbacks)
+    {
+        $req = self::$request;
+        $res = new Response();
+
+        foreach($callbacks as $callback) {
+            if (is_callable($callback)) {
+                $result = call_user_func_array($callback, [$req, $res]);
+            } elseif (is_string($callback)) {
+                $result = self::loadClass($callback, [$req, $res]);
+            } else {
+                throw new Exception('[Router] Cannot call a callback.');
+            }
+
+            if(!$result) break;
+        }
+
+        return false;
     }
 
     private static function loadClass($classStr, $args)
@@ -51,7 +71,7 @@ class Router
         if (strpos($classStr, '@')) {
             $class = explode('@', $classStr);
         } else {
-            throw new Exception('[Route] Cannot load class.');
+            throw new Exception('[Router] Cannot load class.');
         }
 
         require_once $class[0].'.php';
@@ -68,104 +88,12 @@ class Router
         }
     }
 
-    private static function getAccess($url)
-    {
-        $middlewares = array_filter(self::$middlewares, function ($middleware) use ($url) {
-            return strpos($url, $middleware['url']) !== false && (
-                (isset($url[strlen($middleware['url'])]) &&
-                $url[strlen($middleware['url'])] === '/') ||
-                strlen($url) === strlen($middleware['url'])
-            );
-        });
-
-        $access = true;
-        foreach ($middlewares as $middleware) {
-            $return = self::call($middleware['callback']);
-
-            if(is_object($return)){
-                self::$request = $return;
-            } elseif (is_bool($return)) {
-                if($return === false) $access = false;
-            } elseif(is_array($return)) {
-                if($return[1] === false) $access = false;
-            }
-
-            if(!$access && $middleware['code']) {
-                self::handleStatus($middleware['code']);
-                exit();
-            }
-        }
-
-        return $access;
-    }
-
-    private static function loadRoute($route)
-    {
-        if (self::getAccess($route['url'])) {
-            self::call($route['callback']);
-        } else {
-            self::handleStatus(403);
-        }
-    }
-
-    private static function call($callback)
-    {
-        $req = self::$request;
-        $res = new Response();
-
-        if (is_callable($callback)) {
-            return call_user_func_array($callback, [$req, $res]);
-        } elseif (is_string($callback)) {
-            return self::loadClass($callback, [$req, $res]);
-        } elseif (is_bool($callback)) {
-            return $callback;
-        } else {
-            throw new Exception('[Route] Cannot call a callback.');
-        }
-
-        return false;
-    }
-
-    public static function middleware($callback, $code = null)
-    {
-        if(is_array($callback)) {
-            foreach($callback as $middleware) {
-                array_push(self::$middlewares, [
-                    'url' => self::$namespace['current'].self::$namespace['last'],
-                    'callback' => $middleware,
-                    'code' => $code
-                ]);
-            }
-        } else {
-            array_push(self::$middlewares, [
-                'url' => self::$namespace['current'].self::$namespace['last'],
-                'callback' => $callback,
-                'code' => $code
-            ]);
-        }
-
-        return new static();
-    }
-
-    public static function group($url, $callback)
-    {
-        self::namespace('next', $url);
-        self::call($callback);
-        self::namespace('prev', $url);
-        self::namespace('last', $url);
-        return new static();
-    }
-
     public static function run()
     {
         self::$request = new Request();
 
         $routes = array_filter(self::$routes, function ($route) {
             return strtoupper($route['method']) == $_SERVER['REQUEST_METHOD'];
-        });
-
-        usort($routes, function ($r1, $r2) {
-            return (strstr($r1['url'], ':')) ? 1 : -1;
         });
 
         $URI = explode('?', $_SERVER['REQUEST_URI'])[0];
@@ -177,32 +105,12 @@ class Router
             if (preg_match('#^'.$url.'$#', $URI, $matched)) {
                 unset($matched[0]);
                 self::$request->setParams(array_combine($indexes, $matched));
-                self::loadRoute($route);
+                self::call($route['callbacks']);
                 return;
             }
         }
 
-        self::handleStatus(404);
-    }
-    
-    public static function handleStatus($code)
-    {
-        if (array_key_exists($code, self::$status)) {
-            self::call(self::$status[$code]);
-        } else {
-            http_response_code($code);
-        }
-    }
-
-    public static function status($code, $callback)
-    {
-        self::$status[$code] = $callback;
-    }
-
-    public static function redirect($url)
-    {
-        header("Location: $url");
-        exit();
+        http_response_code(404);
     }
 }
 
@@ -274,13 +182,13 @@ class Request {
 }
 
 class Response {
-    public function send($code, $message = null) {
-        header('Content-Type: application/json');
-        
-        if($message) {
-            echo json_encode($message);
-        }
-
+    public function status($code) {
         http_response_code($code);
+        return $this;
+    }
+
+    public function json($message) {
+        header('Content-Type: application/json');
+        echo json_encode($message);
     }
 }
